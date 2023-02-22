@@ -894,6 +894,8 @@ const String kBuildMode = 'BuildMode';
 /// The define to pass whether we compile 64-bit android-arm code.
 const String kTargetPlatform = 'TargetPlatform';
 
+const String kAndroidArch = 'AndroidArch';
+
 /// The define to control what target file is used.
 const String kTargetFile = 'TargetFile';
 
@@ -904,6 +906,11 @@ const String kTrackWidgetCreation = 'TrackWidgetCreation';
 ///
 /// This is expected to be a comma separated list of strings.
 const String kExtraFrontEndOptions = 'ExtraFrontEndOptions';
+
+/// Additional configuration passed to the dart front end.
+///
+/// This is a single path.
+const String kNativeAssets = 'NativeAssets';
 
 /// Additional configuration passed to gen_snapshot.
 ///

@@ -37,6 +37,7 @@ import 'gradle_utils.dart';
 import 'migrations/android_studio_java_gradle_conflict_migration.dart';
 import 'migrations/top_level_gradle_build_file_migration.dart';
 import 'multidex.dart';
+import 'native_assets.dart';
 
 /// The regex to grab variant names from printVariants gradle task
 ///
@@ -291,10 +292,19 @@ class AndroidGradleBuilder implements AndroidBuilder {
         indent: 4,
       );
     }
+
+    final Uri? nativeAssets = await buildNativeAssetsAndroid(
+      androidArchs: androidBuildInfo.targetArchs,
+      projectUri: project.directory.uri,
+      packageConfig: androidBuildInfo.buildInfo.packageConfig,
+    );
     // The default Gradle script reads the version name and number
     // from the local.properties file.
     updateLocalProperties(
-        project: project, buildInfo: androidBuildInfo.buildInfo);
+      project: project,
+      buildInfo: androidBuildInfo.buildInfo,
+      nativeAssets: nativeAssets,
+    );
 
     final List<String> command = <String>[
       // This does more than get gradlewrapper. It creates the file, ensures it
@@ -403,6 +413,9 @@ class AndroidGradleBuilder implements AndroidBuilder {
     if (androidBuildInfo.fastStart) {
       command.add('-Pfast-start=true');
     }
+    // if (nativeAssets != null) {
+    //   command.add('-Pnative-assets=${nativeAssets.path}');
+    // }
     command.add(assembleTask);
 
     GradleHandledError? detectedGradleError;

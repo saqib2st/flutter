@@ -157,6 +157,7 @@ class CocoaPods {
     required XcodeBasedProject xcodeProject,
     required BuildMode buildMode,
     bool dependenciesChanged = true,
+    Uri? nativeAssets,
   }) async {
     if (!xcodeProject.podfile.existsSync()) {
       throwToolExit('Podfile missing');
@@ -167,7 +168,7 @@ class CocoaPods {
       if (!await _checkPodCondition()) {
         throwToolExit('CocoaPods not installed or not in valid state.');
       }
-      await _runPodInstall(xcodeProject, buildMode);
+      await _runPodInstall(xcodeProject, buildMode, nativeAssets: nativeAssets);
 
       // This migrator works around a CocoaPods bug, and should be run after `pod install` is run.
       final ProjectMigration postPodMigration = ProjectMigration(<ProjectMigrator>[
@@ -315,7 +316,9 @@ class CocoaPods {
         || podfileLockFile.readAsStringSync() != manifestLockFile.readAsStringSync();
   }
 
-  Future<void> _runPodInstall(XcodeBasedProject xcodeProject, BuildMode buildMode) async {
+  Future<void> _runPodInstall(
+      XcodeBasedProject xcodeProject, BuildMode buildMode,
+      {Uri? nativeAssets}) async {
     final Status status = _logger.startProgress('Running pod install...');
     final ProcessResult result = await _processManager.run(
       <String>['pod', 'install', '--verbose'],
@@ -325,6 +328,7 @@ class CocoaPods {
         // CocoaPods analytics adds a lot of latency.
         'COCOAPODS_DISABLE_STATS': 'true',
         'LANG': 'en_US.UTF-8',
+        if (nativeAssets != null) 'NATIVE_ASSETS': nativeAssets.path,
       },
     );
     status.stop();

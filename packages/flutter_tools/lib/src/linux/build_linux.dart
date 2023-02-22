@@ -17,6 +17,7 @@ import '../convert.dart';
 import '../flutter_plugins.dart';
 import '../globals.dart' as globals;
 import '../migrations/cmake_custom_command_migration.dart';
+import 'native_assets.dart';
 
 // Matches the following error and warning patterns:
 // - <file path>:<line>:<column>: (fatal) error: <error...>
@@ -63,6 +64,12 @@ Future<void> buildLinux(
 
   createPluginSymlinks(linuxProject.parent);
 
+  final Uri? nativeAssets = await buildNativeAssetsLinux(
+    targetPlatform: targetPlatform,
+    projectUri: linuxProject.parent.directory.uri,
+    packageConfig: buildInfo.packageConfig,
+  );
+
   final Status status = globals.logger.startProgress(
     'Building Linux application...',
   );
@@ -72,7 +79,7 @@ Future<void> buildLinux(
         globals.fs.directory(getLinuxBuildDirectory(targetPlatform)).childDirectory(buildModeName);
     await _runCmake(buildModeName, linuxProject.cmakeFile.parent, buildDirectory,
                     needCrossBuild, targetPlatform, targetSysroot);
-    await _runBuild(buildDirectory);
+    await _runBuild(buildDirectory, nativeAssets: nativeAssets);
   } finally {
     status.cancel();
   }
@@ -153,7 +160,7 @@ Future<void> _runCmake(String buildModeName, Directory sourceDir, Directory buil
   globals.flutterUsage.sendTiming('build', 'cmake-linux', Duration(milliseconds: sw.elapsedMilliseconds));
 }
 
-Future<void> _runBuild(Directory buildDir) async {
+Future<void> _runBuild(Directory buildDir, {Uri? nativeAssets}) async {
   final Stopwatch sw = Stopwatch()..start();
 
   int result;
@@ -170,6 +177,7 @@ Future<void> _runBuild(Directory buildDir) async {
           'VERBOSE_SCRIPT_LOGGING': 'true',
         if (!globals.logger.isVerbose)
           'PREFIXED_ERROR_LOGGING': 'true',
+        if (nativeAssets != null) 'NATIVE_ASSETS': nativeAssets.path,
       },
       trace: true,
       stdoutErrorMatcher: errorMatcher,

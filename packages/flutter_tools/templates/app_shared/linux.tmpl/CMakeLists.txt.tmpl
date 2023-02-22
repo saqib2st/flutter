@@ -127,6 +127,16 @@ foreach(bundled_library ${PLUGIN_BUNDLED_LIBRARIES})
     COMPONENT Runtime)
 endforeach(bundled_library)
 
+# TODO(dacoharkes): Unhardcode the architecture.
+set(NATIVE_ASSETS_DIR "${PROJECT_BUILD_DIR}native_assets/linux_x64")
+file(GLOB NATIVE_ASSET_FILES "${NATIVE_ASSETS_DIR}/*.so")
+
+foreach(native_asset_file ${NATIVE_ASSET_FILES})
+  install(FILES "${native_asset_file}"
+    DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+    COMPONENT Runtime)
+endforeach(native_asset_file)
+
 # Fully re-copy the assets directory on each build to avoid having stale files
 # from a previous install.
 set(FLUTTER_ASSET_DIR_NAME "flutter_assets")

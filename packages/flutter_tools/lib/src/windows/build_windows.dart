@@ -19,6 +19,7 @@ import '../flutter_plugins.dart';
 import '../globals.dart' as globals;
 import '../migrations/cmake_custom_command_migration.dart';
 import 'migrations/version_migration.dart';
+import 'native_assets.dart';
 import 'visual_studio.dart';
 
 // These characters appear to be fine: @%()-+_{}[]`~
@@ -63,6 +64,12 @@ Future<void> buildWindows(WindowsProject windowsProject, BuildInfo buildInfo, {
   _writeGeneratedFlutterConfig(windowsProject, buildInfo, target);
   createPluginSymlinks(windowsProject.parent);
 
+  final Uri? nativeAssets = await buildNativeAssetsWindows(
+    targetPlatform: TargetPlatform.windows_x64,
+    projectUri: windowsProject.parent.directory.uri,
+    packageConfig: buildInfo.packageConfig,
+  );
+
   final VisualStudio visualStudio = visualStudioOverride ?? VisualStudio(
     fileSystem: globals.fs,
     platform: globals.platform,
@@ -91,7 +98,7 @@ Future<void> buildWindows(WindowsProject windowsProject, BuildInfo buildInfo, {
     if (visualStudio.displayVersion == '17.1.0') {
       _fixBrokenCmakeGeneration(buildDirectory);
     }
-    await _runBuild(cmakePath, buildDirectory, buildModeName);
+    await _runBuild(cmakePath, buildDirectory, buildModeName, nativeAssets: nativeAssets);
   } finally {
     status.stop();
   }
@@ -182,8 +189,7 @@ Future<void> _runBuild(
   String cmakePath,
   Directory buildDir,
   String buildModeName,
-  { bool install = true }
-) async {
+    {bool install = true, Uri? nativeAssets}) async {
   final Stopwatch sw = Stopwatch()..start();
 
   // MSBuild sends all output to stdout, including build errors. This surfaces
@@ -207,6 +213,7 @@ Future<void> _runBuild(
       environment: <String, String>{
         if (globals.logger.isVerbose)
           'VERBOSE_SCRIPT_LOGGING': 'true',
+        if (nativeAssets != null) 'NATIVE_ASSETS': nativeAssets.path,
       },
       trace: true,
       stdoutErrorMatcher: errorMatcher,

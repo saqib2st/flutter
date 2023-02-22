@@ -16,6 +16,7 @@ import '../compile.dart';
 import '../flutter_plugins.dart';
 import '../globals.dart' as globals;
 import '../project.dart';
+import 'native_assets.dart';
 import 'test_time_recorder.dart';
 
 /// A request to the [TestCompiler] for recompilation.
@@ -163,6 +164,10 @@ class TestCompiler {
         invalidatedRegistrantFiles.add(flutterProject!.dartPluginRegistrant.absolute.uri);
       }
 
+      final Uri? nativeAssets = await buildNativeAssetsHost(
+        projectUri: flutterProject!.directory.uri,
+      );
+
       final CompilerOutput? compilerOutput = await compiler!.recompile(
         request.mainUri,
         <Uri>[request.mainUri, ...invalidatedRegistrantFiles],
@@ -171,6 +176,7 @@ class TestCompiler {
         projectRootPath: flutterProject?.directory.absolute.path,
         checkDartPluginRegistry: true,
         fs: globals.fs,
+        nativeAssetsYaml: nativeAssets,
       );
       final String? outputPath = compilerOutput?.outputFilename;
 

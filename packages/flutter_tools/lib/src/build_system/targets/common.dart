@@ -177,6 +177,14 @@ class KernelSnapshot extends Target {
     final List<String> extraFrontEndOptions = decodeCommaSeparated(environment.defines, kExtraFrontEndOptions);
     final List<String>? fileSystemRoots = environment.defines[kFileSystemRoots]?.split(',');
     final String? fileSystemScheme = environment.defines[kFileSystemScheme];
+    final String? nativeAssets = environment.defines[kNativeAssets];
+    environment.logger.printWarning('nativeAssets: $nativeAssets');
+    if (nativeAssets != null) {
+      environment.logger.printWarning(
+          environment.fileSystem.file(nativeAssets).readAsStringSync());
+    }
+    environment.logger
+        .printWarning('environment.defines: ${environment.defines}');
 
     TargetModel targetModel = TargetModel.flutter;
     if (targetPlatform == TargetPlatform.fuchsia_x64 ||
@@ -235,6 +243,7 @@ class KernelSnapshot extends Target {
       packageConfig: packageConfig,
       buildDir: environment.buildDir,
       checkDartPluginRegistry: environment.generateDartPluginRegistry,
+      nativeAssets: nativeAssets,
     );
     if (output == null || output.errorCount != 0) {
       throw Exception();

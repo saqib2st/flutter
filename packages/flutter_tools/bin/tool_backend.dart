@@ -28,6 +28,7 @@ Future<void> main(List<String> arguments) async {
   final bool treeShakeIcons = Platform.environment['TREE_SHAKE_ICONS'] == 'true';
   final bool verbose = Platform.environment['VERBOSE_SCRIPT_LOGGING'] == 'true';
   final bool prefixedErrors = Platform.environment['PREFIXED_ERROR_LOGGING'] == 'true';
+  final String? nativeAssets = Platform.environment['NATIVE_ASSETS'];
 
   if (projectDirectory == null) {
     stderr.write('PROJECT_DIR environment variable must be set to the location of Flutter project to be built.');
@@ -93,6 +94,7 @@ or
         '--ExtraGenSnapshotOptions=$extraGenSnapshotOptions',
       if (extraFrontEndOptions != null)
         '--ExtraFrontEndOptions=$extraFrontEndOptions',
+      if (nativeAssets != null) '--native-assets=$nativeAssets',
       target,
     ],
   );

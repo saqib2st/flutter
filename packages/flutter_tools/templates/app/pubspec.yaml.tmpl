@@ -82,6 +82,22 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^2.0.0
 
+{{#withFfiPackage}}
+dependency_overrides:
+  # TODO(dacoharkes): Publish on pub.
+  native_assets_cli:
+    git:
+      url: git@github.com:dart-lang/native.git
+      ref: e01aa63e851ce971390bc45fc17d16240b8d164a
+      path: pkgs/native_assets_cli/
+  # TODO(dacoharkes): Publish on pub.
+  c_compiler:
+    git:
+      url: git@github.com:dart-lang/native.git
+      ref: e01aa63e851ce971390bc45fc17d16240b8d164a
+      path: pkgs/c_compiler/
+{{/withFfiPackage}}
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 

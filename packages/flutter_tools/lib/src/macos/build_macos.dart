@@ -20,6 +20,7 @@ import 'cocoapod_utils.dart';
 import 'migrations/flutter_application_migration.dart';
 import 'migrations/macos_deployment_target_migration.dart';
 import 'migrations/remove_macos_framework_link_and_embedding_migration.dart';
+import 'native_assets.dart';
 
 /// When run in -quiet mode, Xcode should only print from the underlying tasks to stdout.
 /// Passing this regexp to trace moves the stdout output to stderr.
@@ -64,7 +65,22 @@ Future<void> buildMacOS({
   final ProjectMigration migration = ProjectMigration(migrators);
   migration.run();
 
-  final Directory flutterBuildDir = globals.fs.directory(getMacOSBuildDirectory());
+  // TODO(dacoharkes): Should we respect
+  // globals.platform.environment['FLUTTER_XCODE_ARCHS']; ?
+  const DarwinArch darwinArch = DarwinArch.x86_64;
+  final NativeAssetsMacosResult? nativeAssets = await buildNativeAssetsMacOS(
+    darwinArch: darwinArch,
+    projectUri: flutterProject.directory.uri,
+    packageConfig: buildInfo.packageConfig,
+  );
+  final Uri? nativeAssetsYaml = nativeAssets?.yamlUri;
+  final Uri? nativeAssetsPodspec = nativeAssets?.podspecUri;
+  if (nativeAssets != null) {
+    await globals.cocoaPods?.setupPodfile(flutterProject.macos);
+  }
+
+  final Directory flutterBuildDir =
+      globals.fs.directory(getMacOSBuildDirectory());
   if (!flutterBuildDir.existsSync()) {
     flutterBuildDir.createSync(recursive: true);
   }
@@ -74,8 +90,15 @@ Future<void> buildMacOS({
     buildInfo: buildInfo,
     targetOverride: targetOverride,
     useMacOSConfig: true,
+    nativeAssets: nativeAssetsYaml,
   );
-  await processPodsIfNeeded(flutterProject.macos, getMacOSBuildDirectory(), buildInfo.mode);
+  await processPodsIfNeeded(
+    flutterProject.macos,
+    getMacOSBuildDirectory(),
+    buildInfo.mode,
+    nativeAssetsYaml: nativeAssetsYaml,
+    nativeAssetsPodspec: nativeAssetsPodspec,
+  );
   // If the xcfilelists do not exist, create empty version.
   if (!flutterProject.macos.inputFileList.existsSync()) {
     flutterProject.macos.inputFileList.createSync(recursive: true);

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:io' as io;
 
 import 'package:package_config/package_config.dart';
 import 'package:vm_service/vm_service.dart' as vm_service;
@@ -725,13 +726,30 @@ class DevFS {
       }
     }
     _logger.printTrace('Updating files.');
+    final io.File file = io.File(compilerOutput.outputFilename);
+    _logger.printTrace([
+      'compilerOutput.outputFilename',
+      compilerOutput.outputFilename,
+      file.lengthSync(),
+    ].toString());
+    if (file.lengthSync() == 33663840) {
+      _logger.printTrace('Copying dill to desktop.');
+      file.copySync('/Users/dacoharkes/Desktop/app.dill');
+    }
     final Stopwatch transferTimer = _stopwatchFactory.createStopwatch('transfer')..start();
 
     await Future.wait(pendingAssetBuilds);
     if (assetBuildFailed) {
       return UpdateFSReport();
     }
-
+    _logger.printTrace([
+      'dirtyEntries',
+      for (final e in dirtyEntries.entries) ...[
+        e.key,
+        e.value.isModified,
+        e.value.size
+      ],
+    ].toString());
     if (dirtyEntries.isNotEmpty) {
       await (devFSWriter ?? _httpWriter).write(dirtyEntries, _baseUri!, _httpWriter);
     }

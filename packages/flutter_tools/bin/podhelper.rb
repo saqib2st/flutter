@@ -164,12 +164,14 @@ end
 def flutter_install_all_ios_pods(ios_application_path = nil)
   flutter_install_ios_engine_pod(ios_application_path)
   flutter_install_plugin_pods(ios_application_path, '.symlinks', 'ios')
+  flutter_install_native_assets_pods()
 end
 
 # Same as flutter_install_all_ios_pods for macOS.
 def flutter_install_all_macos_pods(macos_application_path = nil)
   flutter_install_macos_engine_pod(macos_application_path)
   flutter_install_plugin_pods(macos_application_path, File.join('Flutter', 'ephemeral', '.symlinks'), 'macos')
+  flutter_install_native_assets_pods()
 end
 
 # Install iOS Flutter engine pod.
@@ -309,6 +311,19 @@ def flutter_parse_plugins_file(file, platform)
   return [] unless dependencies_hash.has_key?('plugins')
   return [] unless dependencies_hash['plugins'].has_key?(platform)
   dependencies_hash['plugins'][platform] || []
+end
+
+# Install Native Assets pods.
+def flutter_install_native_assets_pods()
+  native_assets_podspec_path = ENV["NATIVE_ASSETS"]
+  puts "flutter_install_native_assets_pods".inspect
+  puts native_assets_podspec_path.inspect
+
+  # return [] unless File.exist? native_assets_podspec_path
+
+  puts "Installing native assets  #{native_assets_podspec_path}.".inspect
+
+  pod "NativeAssets", path: native_assets_podspec_path
 end
 
 def flutter_relative_path_from_podfile(path)

@@ -34,6 +34,7 @@ import 'migrations/project_build_location_migration.dart';
 import 'migrations/remove_bitcode_migration.dart';
 import 'migrations/remove_framework_link_and_embedding_migration.dart';
 import 'migrations/xcode_build_system_migration.dart';
+import 'native_assets.dart';
 import 'xcode_build_settings.dart';
 import 'xcodeproj.dart';
 import 'xcresult.dart';
@@ -217,12 +218,32 @@ Future<XcodeBuildResult> buildXcodeProject({
   }
 
   final FlutterProject project = FlutterProject.current();
+
+  final NativeAssetsiOSResult? nativeAssets = await buildNativeAssetsiOS(
+    darwinArch: activeArch ?? DarwinArch.x86_64,
+    environmentType: environmentType,
+    projectUri: project.directory.uri,
+    packageConfig: buildInfo.packageConfig,
+  );
+  final Uri? nativeAssetsYaml = nativeAssets?.yamlUri;
+  final Uri? nativeAssetsPodspec = nativeAssets?.podspecUri;
+  if (nativeAssets != null) {
+    await globals.cocoaPods?.setupPodfile(project.ios);
+  }
+
   await updateGeneratedXcodeProperties(
     project: project,
     targetOverride: targetOverride,
     buildInfo: buildInfo,
+    nativeAssets: nativeAssetsYaml,
   );
-  await processPodsIfNeeded(project.ios, getIosBuildDirectory(), buildInfo.mode);
+  await processPodsIfNeeded(
+    project.ios,
+    getIosBuildDirectory(),
+    buildInfo.mode,
+    nativeAssetsYaml: nativeAssetsYaml,
+    nativeAssetsPodspec: nativeAssetsPodspec,
+  );
   if (configOnly) {
     return XcodeBuildResult(success: true);
   }

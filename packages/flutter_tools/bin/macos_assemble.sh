@@ -106,6 +106,7 @@ BuildApp() {
     "-dSplitDebugInfo=${SPLIT_DEBUG_INFO}"
     "-dTrackWidgetCreation=${TRACK_WIDGET_CREATION}"
     "-dAction=${ACTION}"
+    "-dNativeAssets=${NATIVE_ASSETS}"
     "--DartDefines=${DART_DEFINES}"
     "--ExtraGenSnapshotOptions=${EXTRA_GEN_SNAPSHOT_OPTIONS}"
     "--ExtraFrontEndOptions=${EXTRA_FRONT_END_OPTIONS}"

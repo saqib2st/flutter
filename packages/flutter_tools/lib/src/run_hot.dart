@@ -11,6 +11,7 @@ import 'package:package_config/package_config.dart';
 import 'package:pool/pool.dart';
 import 'package:vm_service/vm_service.dart' as vm_service;
 
+import 'android/native_assets.dart';
 import 'base/context.dart';
 import 'base/file_system.dart';
 import 'base/logger.dart';
@@ -24,10 +25,16 @@ import 'devfs.dart';
 import 'device.dart';
 import 'features.dart';
 import 'globals.dart' as globals;
+import 'ios/devices.dart';
+import 'ios/native_assets.dart';
+import 'ios/simulators.dart';
+import 'linux/native_assets.dart';
+import 'macos/native_assets.dart';
 import 'project.dart';
 import 'reporting/reporting.dart';
 import 'resident_runner.dart';
 import 'vmservice.dart';
+import 'windows/native_assets.dart';
 
 ProjectFileInvalidator get projectFileInvalidator => context.get<ProjectFileInvalidator>() ?? ProjectFileInvalidator(
   fileSystem: globals.fs,
@@ -357,6 +364,108 @@ class HotRunner extends ResidentRunner {
   }) async {
     await _calculateTargetPlatform();
 
+    if (flutterDevices.length != 1) {
+      throw UnimplementedError(
+          'Non-single list of flutterDevices: $flutterDevices.');
+    }
+    final FlutterDevice flutterDevice = flutterDevices.single;
+    final Device? device = flutterDevice.device;
+    final TargetPlatform targetPlatform = flutterDevice.targetPlatform!;
+    final Uri projectUri = Uri.directory(projectRootPath);
+    late Uri? nativeAssetsYaml;
+    switch (targetPlatform) {
+      case TargetPlatform.android:
+        nativeAssetsYaml = await buildNativeAssetsAndroid(
+          androidArchs: <AndroidArch>[
+            AndroidArch.arm64_v8a,
+            AndroidArch.armeabi_v7a,
+            AndroidArch.x86,
+            AndroidArch.x86_64,
+          ],
+          projectUri: projectUri,
+        );
+        break;
+      case TargetPlatform.ios:
+        if (device is IOSDevice) {
+          nativeAssetsYaml = (await buildNativeAssetsiOS(
+            darwinArch: device.cpuArchitecture,
+            environmentType: EnvironmentType.physical,
+            projectUri: projectUri,
+          ))
+              ?.yamlUri;
+        } else if (device is IOSSimulator) {
+          nativeAssetsYaml = (await buildNativeAssetsiOS(
+            darwinArch: DarwinArch.x86_64,
+            environmentType: EnvironmentType.simulator,
+            projectUri: projectUri,
+          ))
+              ?.yamlUri;
+        } else {
+          throw UnimplementedError('Unknown device: $device.');
+        }
+        break;
+      case TargetPlatform.darwin:
+        nativeAssetsYaml = (await buildNativeAssetsMacOS(
+          darwinArch: DarwinArch.x86_64,
+          projectUri: projectUri,
+        ))
+            ?.yamlUri;
+        break;
+      case TargetPlatform.linux_x64:
+      case TargetPlatform.linux_arm64:
+        nativeAssetsYaml = await buildNativeAssetsLinux(
+          projectUri: projectUri,
+          targetPlatform: targetPlatform,
+        );
+        break;
+      case TargetPlatform.windows_x64:
+        nativeAssetsYaml = await buildNativeAssetsWindows(
+          projectUri: projectUri,
+          targetPlatform: targetPlatform,
+        );
+        break;
+      case TargetPlatform.fuchsia_arm64:
+        // TODO(dacoharkes): Implement this.
+        nativeAssetsYaml = null;
+        break;
+      case TargetPlatform.fuchsia_x64:
+        // TODO(dacoharkes): Implement this.
+        nativeAssetsYaml = null;
+        break;
+      case TargetPlatform.tester:
+        // TODO(dacoharkes): Implement this.
+        nativeAssetsYaml = null;
+        break;
+      case TargetPlatform.web_javascript:
+        nativeAssetsYaml = null;
+        break;
+      case TargetPlatform.android_arm:
+        nativeAssetsYaml = await buildNativeAssetsAndroid(
+          androidArchs: <AndroidArch>[AndroidArch.armeabi_v7a],
+          projectUri: projectUri,
+        );
+        break;
+      case TargetPlatform.android_arm64:
+        nativeAssetsYaml = await buildNativeAssetsAndroid(
+          androidArchs: <AndroidArch>[AndroidArch.arm64_v8a],
+          projectUri: projectUri,
+        );
+        break;
+      case TargetPlatform.android_x64:
+        nativeAssetsYaml = await buildNativeAssetsAndroid(
+          androidArchs: <AndroidArch>[AndroidArch.x86_64],
+          projectUri: projectUri,
+        );
+        break;
+      case TargetPlatform.android_x86:
+        nativeAssetsYaml = await buildNativeAssetsAndroid(
+          androidArchs: <AndroidArch>[AndroidArch.x86],
+          projectUri: projectUri,
+        );
+        break;
+    }
+
+
     final Stopwatch appStartedTimer = Stopwatch()..start();
     final File mainFile = globals.fs.file(mainPath);
     firstBuildTime = DateTime.now();
@@ -388,6 +497,7 @@ class HotRunner extends ResidentRunner {
             packageConfig: debuggingOptions.buildInfo.packageConfig,
             projectRootPath: FlutterProject.current().directory.absolute.path,
             fs: globals.fs,
+            nativeAssetsYaml: nativeAssetsYaml,
           ).then((CompilerOutput? output) {
             compileTimer.stop();
             totalCompileTime += compileTimer.elapsed;

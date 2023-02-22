@@ -116,6 +116,8 @@ class AssembleCommand extends FlutterCommand {
         'files will be written. Must be either absolute or relative from the '
         'root of the current Flutter project.',
     );
+    argParser.addOption('native-assets',
+        hide: !verboseHelp, help: 'Path to your "native_assets.yaml" file.');
     usesExtraDartFlagOptions(verboseHelp: verboseHelp);
     usesDartDefineOption();
     argParser.addOption(
@@ -224,7 +226,12 @@ class AssembleCommand extends FlutterCommand {
           .childDirectory('.dart_tool')
           .childDirectory('flutter_build'),
       projectDir: flutterProject.directory,
-      defines: _parseDefines(stringsArg('define')),
+      defines: _parseDefines(stringsArg('define'))
+        ..addAll(<String, String>{
+          // TODO(dacoharkes): Shoud this be a define, or it's own field in Environment?
+          if (stringArg('native-assets') != null)
+            kNativeAssets: stringArg('native-assets')!,
+        }),
       inputs: _parseDefines(stringsArg('input')),
       cacheDir: globals.cache.getRoot(),
       flutterRootDir: globals.fs.directory(Cache.flutterRoot),
@@ -312,6 +319,9 @@ class AssembleCommand extends FlutterCommand {
       target = targets.single;
     }
     final ArgResults argumentResults = argResults!;
+    if (argumentResults['native-assets'] != null) {
+      print('Not implemented: ${argumentResults['native-assets']}');
+    }
     final BuildResult result = await _buildSystem.build(
       target!,
       _environment,

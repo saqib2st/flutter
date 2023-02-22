@@ -626,6 +626,7 @@ void updateLocalProperties({
   required FlutterProject project,
   BuildInfo? buildInfo,
   bool requireAndroidSdk = true,
+  Uri? nativeAssets,
 }) {
   if (requireAndroidSdk && globals.androidSdk == null) {
     exitWithNoSdkMessage();
@@ -673,6 +674,10 @@ void updateLocalProperties({
       globals.logger,
     );
     changeIfNecessary('flutter.versionCode', buildNumber);
+  }
+
+  if (nativeAssets != null) {
+    changeIfNecessary('nativeAssets', nativeAssets.path);
   }
 
   if (changed) {

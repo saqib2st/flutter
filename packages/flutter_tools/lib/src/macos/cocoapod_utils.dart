@@ -14,11 +14,14 @@ import '../project.dart';
 Future<void> processPodsIfNeeded(
   XcodeBasedProject xcodeProject,
   String buildDirectory,
-  BuildMode buildMode) async {
+  BuildMode buildMode,
+    {Uri? nativeAssetsYaml, Uri? nativeAssetsPodspec}) async {
   final FlutterProject project = xcodeProject.parent;
   // Ensure that the plugin list is up to date, since hasPlugins relies on it.
   await refreshPluginsList(project, macOSPlatform: project.macos.existsSync());
-  if (!(hasPlugins(project) || (project.isModule && xcodeProject.podfile.existsSync()))) {
+  if (!(hasPlugins(project) ||
+          (project.isModule && xcodeProject.podfile.existsSync())) &&
+      nativeAssetsYaml == null) {
     return;
   }
   // If the Xcode project, Podfile, or generated xcconfig have changed since
@@ -35,6 +38,7 @@ Future<void> processPodsIfNeeded(
         'bin',
         'podhelper.rb',
       ),
+      if (nativeAssetsYaml != null) nativeAssetsYaml.path,
     ],
     fileSystem: globals.fs,
     logger: globals.logger,
@@ -44,6 +48,7 @@ Future<void> processPodsIfNeeded(
     xcodeProject: xcodeProject,
     buildMode: buildMode,
     dependenciesChanged: !fingerprinter.doesFingerprintMatch(),
+        nativeAssets: nativeAssetsPodspec,
   ) ?? false;
   if (didPodInstall) {
     fingerprinter.writeFingerprint();
